@@ -9,6 +9,7 @@ const {
   blockTwoFactorDisableWhenRequired,
   requireTwoFactorSetupAcknowledgementToken,
   requireTwoFactorSetupFinalizationToken,
+  isLdapAuthEnabled,
 } = require('@librechat/api');
 const {
   resetPasswordRequestController,
@@ -65,7 +66,7 @@ const getCloudFrontAuthCookieRefreshResult = (req, res) => {
   return forceRefreshCloudFrontAuthCookies(req, res, req.user);
 };
 
-const ldapAuth = !!process.env.LDAP_URL && !!process.env.LDAP_USER_SEARCH_BASE;
+const ldapAuth = isLdapAuthEnabled();
 //Local
 router.post('/logout', middleware.requireJwtAuth, logoutController);
 router.post(

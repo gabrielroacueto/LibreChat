@@ -19,10 +19,16 @@ const {
   loginLimiter,
   logHeaders,
   markOAuthNavigation,
+  backchannelLogoutLimiter,
 } = require('~/server/middleware');
 const { createOAuthHandler } = require('~/server/controllers/auth/oauth');
 const { findBalanceByUser, upsertBalanceFields } = require('~/models');
 const { getAppConfig } = require('~/server/services/Config');
+const {
+  requireBackchannelLogoutEnabled,
+  parseBackchannelLogoutBody,
+  handleBackchannelLogout,
+} = require('~/server/services/OpenIDBackchannelLogout');
 
 const setBalanceConfig = createSetBalanceConfig({
   getAppConfig,
@@ -44,6 +50,17 @@ const authFailureRedirectOptions = {
 
 router.use(logHeaders);
 router.use(markOAuthNavigation);
+
+/** OIDC Back-Channel Logout 1.0: runs as the system, not any tenant or user. Registered before
+ *  loginLimiter so the IdP's few delivery IPs are governed by backchannelLogoutLimiter only. */
+router.post(
+  '/openid/backchannel-logout',
+  requireBackchannelLogoutEnabled,
+  backchannelLogoutLimiter,
+  parseBackchannelLogoutBody,
+  handleBackchannelLogout,
+);
+
 router.use(loginLimiter);
 
 const requireCallbackTenant = createPreAuthTenantGuard({
